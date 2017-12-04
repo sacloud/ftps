@@ -332,19 +332,13 @@ func (ftps *FTPS) StoreFile(remoteFilepath string, f *os.File) (err error) {
 	return
 }
 
-func (ftps *FTPS) RetrieveFile(remoteFilepath, localFilepath string) (err error) {
+func (ftps *FTPS) RetrieveFile(remoteFilepath string, file *os.File) (err error) {
 
 	dataConn, err := ftps.requestDataConn(fmt.Sprintf("RETR %s", remoteFilepath), 150)
 	if err != nil {
 		return
 	}
 	defer dataConn.Close()
-
-	file, err := os.Create(localFilepath)
-	if err != nil {
-		return
-	}
-	defer file.Close()
 
 	_, err = io.Copy(file, dataConn)
 	if err != nil {
