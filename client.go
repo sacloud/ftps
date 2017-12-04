@@ -3,6 +3,7 @@ package ftps
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -38,7 +39,41 @@ func (c *Client) Upload(filePath string) error {
 		return fmt.Errorf("Auth FTP failed: %#v", err)
 	}
 
-	err = rawClient.StoreFile(filepath.Base(filePath), filePath)
+	f, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("Open file failed[%q]: %s", filePath, err)
+	}
+	defer f.Close()
+
+	err = rawClient.StoreFile(filepath.Base(filePath), f)
+	if err != nil {
+		return fmt.Errorf("Storefile FTP failed: %#v", err)
+	}
+
+	err = rawClient.Quit()
+	if err != nil {
+		return fmt.Errorf("Quit FTP failed: %#v", err)
+	}
+
+	return nil
+}
+
+// UploadFile file to Server
+func (c *Client) UploadFile(remoteFilepath string, file *os.File) error {
+	rawClient := &FTPS{}
+	rawClient.TLSConfig.InsecureSkipVerify = true
+
+	err := rawClient.Connect(c.Host, 21)
+	if err != nil {
+		return fmt.Errorf("Connect FTP failed: %#v", err)
+	}
+
+	err = rawClient.Login(c.UserName, c.Password)
+	if err != nil {
+		return fmt.Errorf("Auth FTP failed: %#v", err)
+	}
+
+	err = rawClient.StoreFile(remoteFilepath, file)
 	if err != nil {
 		return fmt.Errorf("Storefile FTP failed: %#v", err)
 	}

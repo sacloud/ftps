@@ -298,12 +298,7 @@ func (ftps *FTPS) parseEntryLine(line string) (entry *Entry, err error) {
 	return
 }
 
-func (ftps *FTPS) StoreFile(remoteFilepath string, srcFilepath string) (err error) {
-	f, err := os.Open(srcFilepath)
-	if err != nil {
-		return
-	}
-	defer f.Close()
+func (ftps *FTPS) StoreFile(remoteFilepath string, f *os.File) (err error) {
 
 	fileinfo, err := f.Stat()
 	if err != nil {
