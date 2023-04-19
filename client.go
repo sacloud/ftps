@@ -1,6 +1,7 @@
 package ftps
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -11,9 +12,10 @@ import (
 
 // Client FTPS Client
 type Client struct {
-	UserName string
-	Password string
-	Host     string
+	UserName  string
+	Password  string
+	Host      string
+	TLSConfig *tls.Config
 }
 
 // NewClient return new FTPS Client
@@ -22,6 +24,21 @@ func NewClient(user string, pass string, host string) *Client {
 		UserName: user,
 		Password: pass,
 		Host:     host,
+	}
+}
+
+func NewClientWithTLSConfig(user string, pass string, host string, config *tls.Config) *Client {
+	client := NewClient(user, pass, host)
+	client.TLSConfig = config
+	return client
+}
+
+func (c *Client) tlsConfig() *tls.Config {
+	if c.TLSConfig != nil {
+		return c.TLSConfig
+	}
+	return &tls.Config{
+		InsecureSkipVerify: true,
 	}
 }
 
@@ -44,8 +61,9 @@ func (c *Client) UploadFile(remoteFilepath string, file *os.File) error {
 
 // UploadFile file to Server
 func (c *Client) UploadReader(remoteFilepath string, source io.Reader) error {
-	rawClient := &FTPS{}
-	rawClient.TLSConfig.InsecureSkipVerify = true
+	rawClient := &FTPS{
+		TLSConfig: *c.tlsConfig(),
+	}
 
 	err := rawClient.Connect(c.Host, 21)
 	if err != nil {
@@ -90,8 +108,9 @@ func (c *Client) DownloadFile(file *os.File) error {
 // DownloadFile file from server
 func (c *Client) DownloadWriter(writer io.Writer) error {
 
-	rawClient := &FTPS{}
-	rawClient.TLSConfig.InsecureSkipVerify = true
+	rawClient := &FTPS{
+		TLSConfig: *c.tlsConfig(),
+	}
 
 	err := rawClient.Connect(c.Host, 21)
 	if err != nil {
